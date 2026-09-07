@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: limxsdk
+Version: 4.0.2
+Requires-Dist: onnxruntime
+Requires-Dist: pyyaml
+Requires-Dist: numpy<1.26.4,>1.21.0
+Requires-Dist: pygame
+Requires-Dist: scipy
+Requires-Dist: pandas
+Requires-Dist: mujoco>3.2.2
+

@@ -36,3 +36,21 @@ add_executable(pf_groupJoints_move pf_groupJoints_move.cpp ${COMMON_SRCS})
 target_link_libraries(pf_groupJoints_move ${LINK_LIBS})
 install(TARGETS pf_groupJoints_move DESTINATION ${EXAMPLES_BIN_INSTALL_PREFIX})
 
+if(DEFINED ENV{ROS_DISTRO} AND DEFINED ENV{ROS_VERSION} AND $ENV{ROS_VERSION} EQUAL 2)
+  find_package(rclcpp REQUIRED)
+  find_package(geometry_msgs REQUIRED)
+  find_package(std_msgs REQUIRED)
+  find_package(std_srvs REQUIRED)
+  find_package(nlohmann_json REQUIRED)
+
+  add_executable(tron2_cmd_vel_translator tron2_cmd_vel_translator.cpp)
+  target_link_libraries(tron2_cmd_vel_translator ${LINK_LIBS})
+  ament_target_dependencies(tron2_cmd_vel_translator rclcpp geometry_msgs)
+  install(TARGETS tron2_cmd_vel_translator DESTINATION ${EXAMPLES_BIN_INSTALL_PREFIX})
+
+  add_executable(tron2_request_mode tron2_request_mode.cpp)
+  target_link_libraries(tron2_request_mode ${LINK_LIBS})
+  ament_target_dependencies(tron2_request_mode rclcpp geometry_msgs std_msgs std_srvs nlohmann_json)
+  install(TARGETS tron2_request_mode DESTINATION ${EXAMPLES_BIN_INSTALL_PREFIX})
+endif()
+

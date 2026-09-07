@@ -78,10 +78,13 @@ if(DEFINED ENV{ROS_DISTRO})
 
     link_directories( ${LIB_PATH} )
 
-    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/)
+    install(DIRECTORY include/ DESTINATION include)
     
     # Install library files to build output
-    install(DIRECTORY ${LIB_PATH}/. DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    install(DIRECTORY ${LIB_PATH}/. DESTINATION lib)
+
+    # Install ROS2 launch files
+    install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
     # Export the library
     ament_export_libraries(limxsdk_lowlevel)
