@@ -31,28 +31,77 @@ public:
         robot_ip_(declare_parameter<std::string>("robot_ip", "10.192.1.2")),
         robot_type_(declare_parameter<std::string>("robot_type", "wheel_leg")),  // wheel_leg or sole_foot
         enable_stair_(declare_parameter<bool>("enable_stair", false)),
+        offline_mode_(declare_parameter<bool>("offline_mode", false)),
         current_mode_(RobotMode::UNKNOWN),
-        accid_("UNKNOWN")  // Will be updated from robot info
+        accid_(declare_parameter<std::string>("accid", "tron2a-405"))
     {
-        // Initialize the robot
-        robot_ = limxsdk::Tron2::getInstance();
-        if (!robot_->init(robot_ip_)) {
-            RCLCPP_ERROR(
+        if (!offline_mode_) {
+            // Initialize the robot
+            robot_ = limxsdk::Tron2::getInstance();
+            if (!robot_->init(robot_ip_)) {
+                RCLCPP_ERROR(
+                    get_logger(),
+                    "Failed to initialize TRON2 SDK with robot_ip=%s",
+                    robot_ip_.c_str());
+                current_mode_ = RobotMode::ERROR;
+                return;
+            }
+
+            RCLCPP_INFO(get_logger(), "TRON2 SDK connected to robot_ip=%s", robot_ip_.c_str());
+        } else {
+            RCLCPP_WARN(
                 get_logger(),
-                "Failed to initialize TRON2 SDK with robot_ip=%s",
-                robot_ip_.c_str());
-            current_mode_ = RobotMode::ERROR;
-            return;
+                "Offline mode enabled. Starting without robot connection. accid=%s",
+                accid_.c_str());
+            current_mode_ = RobotMode::IDLE;
         }
 
-        RCLCPP_INFO(get_logger(), "TRON2 SDK connected to robot_ip=%s", robot_ip_.c_str());
         current_mode_ = RobotMode::IDLE;
 
-        // Subscribe to robot info to get the actual serial number (accid)
-        robot_->subscribeRobotState([this](const limxsdk::RobotStateConstPtr& state) {
-            // Robot state callback - update accid if needed
-            // Note: accid comes from robot notifications, not RobotState
-        });
+        // Subscribe to robot notifications to get the actual serial number (accid).
+        // Keep a manual fallback value so the node can be tested offline with a known ID.
+        if (!offline_mode_ && robot_) {
+            robot_->subscribeJsonMessage([this](const std::string& json_payload) {
+                try {
+                    const auto message = json::parse(json_payload);
+                    if (!message.is_object()) {
+                        return;
+                    }
+
+                    auto extractString = [](const json& obj, const std::string& key) -> std::string {
+                        if (obj.is_object() && obj.contains(key) && obj[key].is_string()) {
+                            return obj[key].get<std::string>();
+                        }
+                        return {};
+                    };
+
+                    std::string new_accid;
+                    new_accid = extractString(message, "accid");
+                    if (new_accid.empty() && message.contains("data")) {
+                        new_accid = extractString(message["data"], "accid");
+                    }
+                    if (new_accid.empty() && message.contains("data") && message["data"].contains("robot_info")) {
+                        new_accid = extractString(message["data"]["robot_info"], "accid");
+                    }
+                    if (new_accid.empty() && message.contains("data") && message["data"].contains("robot_id")) {
+                        new_accid = extractString(message["data"], "robot_id");
+                    }
+                    if (new_accid.empty() && message.contains("data") && message["data"].contains("robot")) {
+                        new_accid = extractString(message["data"]["robot"], "accid");
+                    }
+
+                    if (!new_accid.empty() && new_accid != "nav_bridge" && new_accid != "UNKNOWN" &&
+                        new_accid != accid_) {
+                        accid_ = new_accid;
+                        RCLCPP_INFO(get_logger(), "Robot accid updated from notification: %s", accid_.c_str());
+                    }
+                } catch (const json::parse_error& e) {
+                    RCLCPP_WARN(get_logger(), "Ignoring malformed JSON notification: %s", e.what());
+                } catch (const std::exception& e) {
+                    RCLCPP_WARN(get_logger(), "Failed to parse robot notification for accid: %s", e.what());
+                }
+            });
+        }
 
         // Create service servers for all modes (3.8.1 - 3.8.9)
         stand_service_ = create_service<std_srvs::srv::Trigger>(
@@ -99,8 +148,10 @@ public:
 
         RCLCPP_INFO(
             get_logger(),
-            "Tron2RequestMode initialized. robot_type=%s, accid will be auto-detected from robot",
-            robot_type_.c_str());
+            "Tron2RequestMode initialized. robot_type=%s, accid=%s%s",
+            robot_type_.c_str(),
+            accid_.c_str(),
+            offline_mode_ ? " (offline mode)" : " (live mode)");
         RCLCPP_INFO(
             get_logger(),
             "Available services: tron2_stand_mode, tron2_walk_mode, tron2_sitdown, "
@@ -138,6 +189,13 @@ private:
     // Helper: Build JSON request with proper accid
     std::string buildModeRequestJson(const std::string& title, const json& data = json::object())
     {
+        if (accid_.empty() || accid_ == "UNKNOWN" || accid_ == "nav_bridge") {
+            RCLCPP_WARN(
+                get_logger(),
+                "accid is not yet known; sending with current value '%s'. The robot may reject the command until it sends robot_info.",
+                accid_.c_str());
+        }
+
         json message;
         message["accid"] = accid_;  // Use actual robot serial number
         message["title"] = title;
@@ -409,6 +467,7 @@ private:
     uint64_t sequence_id_ = 0;
     bool enable_stair_ = false;
     bool imu_enabled_ = false;
+    bool offline_mode_ = false;
 
     limxsdk::Tron2* robot_{nullptr};
 
