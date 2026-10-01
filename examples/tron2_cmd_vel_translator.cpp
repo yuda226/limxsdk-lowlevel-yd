@@ -26,7 +26,7 @@ public:
         deadman_timeout_s_(declare_parameter<double>("deadman_timeout_s", 0.5)),
         sdk_json_template_(declare_parameter<std::string>(
             "sdk_json_template",
-            "{\"accid\":\"nav_bridge\",\"title\":\"request_cmd_vel\",\"timestamp\":{timestamp_ms},\"guid\":\"{guid}\",\"data\":{\"linear_x\":{linear_x},\"linear_y\":{linear_y},\"angular_z\":{angular_z}}}")),
+            "{\"accid\":\"nav_bridge\",\"title\":\"request_twist\",\"timestamp\":{timestamp_ms},\"guid\":\"{guid}\",\"data\":{\"linear_x\":{linear_x},\"linear_y\":{linear_y},\"angular_z\":{angular_z}}}")),
         last_cmd_time_(this->now()),
         sent_timeout_stop_(true),
         sequence_id_(0)

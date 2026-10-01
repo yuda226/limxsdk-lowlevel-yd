@@ -23,6 +23,7 @@ from launch_ros.actions import Node
 def _create_nodes(context, *args, **kwargs):
     robot_ip = LaunchConfiguration("robot_ip").perform(context)
     robot_type = LaunchConfiguration("robot_type").perform(context)
+    offline_mode = LaunchConfiguration("offline_mode").perform(context)
     
     # Velocity parameters differ between wheel-leg and sole-foot modes
     if robot_type == "wheel_leg":
@@ -47,6 +48,8 @@ def _create_nodes(context, *args, **kwargs):
                 {
                     "robot_ip": robot_ip,
                     "robot_type": robot_type,
+                    "offline_mode": offline_mode,
+                    "accid": "TRON2A_405",
                 }
             ],
         ),
@@ -67,7 +70,7 @@ def _create_nodes(context, *args, **kwargs):
                     "max_linear_y": max_linear_y,
                     "max_angular_z": max_angular_z,
                     "deadman_timeout_s": 0.5,
-                    "sdk_json_template": '{"accid":"nav_bridge","title":"request_twist","timestamp":{timestamp_ms},"guid":"{guid}","data":{"x":{linear_x},"y":{linear_y},"z":{angular_z}}}',
+                    "sdk_json_template": '{"accid":"TRON2A_405","title":"request_twist","timestamp":{timestamp_ms},"guid":"{guid}","data":{"x":{linear_x},"y":{linear_y},"z":{angular_z}}}',
                 }
             ],
         ),
@@ -87,6 +90,11 @@ def generate_launch_description():
                 default_value="wheel_leg",
                 choices=["wheel_leg", "sole_foot"],
                 description="Robot type: wheel_leg (WF_TRON2A) or sole_foot (SF_TRON2A)",
+            ),
+            DeclareLaunchArgument(
+                "offline_mode",
+                default_value="false",
+                description="Start without a live robot connection for ROS topic/service testing.",
             ),
             OpaqueFunction(function=_create_nodes),
         ]

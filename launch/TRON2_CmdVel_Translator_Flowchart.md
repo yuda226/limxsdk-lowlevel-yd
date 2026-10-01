@@ -45,6 +45,24 @@ graph LR
 
 ---
 
+### ###################################### ###
+### How to launch tron2_cmd_vel_translator ###
+### ###################################### ###
+```bash
+# Onboard translator (SDK direct from robot PC)
+ros2 launch limxsdk_lowlevel tron2_cmd_vel_translator.launch.py mode:=onboard robot_ip:=10.192.1.2
+
+# Offboard relay (Jazzy PC relays /cmd_vel to /tron2/cmd_vel)
+ros2 launch limxsdk_lowlevel tron2_cmd_vel_translator.launch.py mode:=offboard_relay
+
+# Onboard bridge consumer (robot PC listens to /tron2/cmd_vel and sends SDK)
+ros2 launch limxsdk_lowlevel tron2_cmd_vel_translator.launch.py mode:=onboard_bridge_consumer robot_ip:=10.192.1.2
+
+# Offboard direct SDK (Jazzy PC sends SDK directly if network allows)
+ros2 launch limxsdk_lowlevel tron2_cmd_vel_translator.launch.py mode:=offboard_direct robot_ip:=10.192.1.2
+```
+### End of launch examples for tron2_cmd_vel_translator ###
+
 ## Key Points
 
 ### 🎯 **Core Functionality**
@@ -68,7 +86,7 @@ graph LR
 - **Processing**: Sanitize → Format → JSON template substitution
 - **Output**: JSON string with fields:
   - `accid`: "nav_bridge" (source identifier)
-  - `title`: "request_cmd_vel" (command type)
+  - `title`: "request_twist" (command type)
   - `timestamp`: milliseconds since epoch
   - `guid`: sequence number for tracking
   - `data`: velocity values (linear_x, linear_y, angular_z)

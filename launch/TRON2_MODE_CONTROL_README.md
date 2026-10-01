@@ -251,6 +251,20 @@ ros2 topic echo /tron2/cmd_vel
 ros2 launch limxsdk_lowlevel tron2_request_mode.launch.py 2>&1 | grep -i "error\|fail\|warn"
 ```
 
+### Debugging offline
+```bash
+source /opt/ros/jazzy/setup.bash && cd /home/yuda/robot/limx_ws && . install/setup.bash && ros2 run limxsdk_lowlevel tron2_request_mode --ros-args -p offline_mode:=true -p accid:=tron2a-405
+
+# Use launch.py
+source /opt/ros/jazzy/setup.bash
+cd /home/yuda/robot/limx_ws
+. install/setup.bash
+ros2 launch limxsdk_lowlevel tron2_complete_setup.launch.py \
+  robot_ip:=10.192.1.2 \
+  robot_type:=wheel_leg \
+  offline_mode:=true
+```
+
 ### ACCID Issue
 The `accid` (robot serial number) is automatically detected from the first robot notification received. If it shows "nav_bridge", this means:
 - Robot info not yet received

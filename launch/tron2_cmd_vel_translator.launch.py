@@ -118,7 +118,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "sdk_json_template",
-                default_value='{"accid":"nav_bridge","title":"request_cmd_vel","timestamp":{timestamp_ms},"guid":"{guid}","data":{"linear_x":{linear_x},"linear_y":{linear_y},"angular_z":{angular_z}}}',
+                default_value='{"accid":"nav_bridge","title":"request_twist","timestamp":{timestamp_ms},"guid":"{guid}","data":{"linear_x":{linear_x},"linear_y":{linear_y},"angular_z":{angular_z}}}',
                 description="JSON template for SDK publishJsonMessage payload",
             ),
             OpaqueFunction(function=_create_node),
