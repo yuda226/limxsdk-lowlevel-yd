@@ -9,6 +9,7 @@ def _create_node(context, *args, **kwargs):
 
     # Default settings from user-provided arguments
     robot_ip = LaunchConfiguration("robot_ip").perform(context)
+    accid = LaunchConfiguration("accid").perform(context)
     cmd_vel_topic_in = LaunchConfiguration("cmd_vel_topic_in").perform(context)
     cmd_vel_topic_out = LaunchConfiguration("cmd_vel_topic_out").perform(context)
 
@@ -51,6 +52,7 @@ def _create_node(context, *args, **kwargs):
                     "enable_sdk_output": enable_sdk_output,
                     "enable_relay_output": enable_relay_output,
                     "robot_ip": robot_ip,
+                    "accid": accid,
                     "cmd_vel_topic_in": cmd_vel_topic_in,
                     "cmd_vel_topic_out": cmd_vel_topic_out,
                     "max_linear_x": max_linear_x,
@@ -87,6 +89,11 @@ def generate_launch_description():
                 description="Robot IP used when SDK output is enabled",
             ),
             DeclareLaunchArgument(
+                "accid",
+                default_value="nav_bridge",
+                description="Robot ACCID (serial number). Will be auto-updated from robot notifications when connected.",
+            ),
+            DeclareLaunchArgument(
                 "cmd_vel_topic_in",
                 default_value="/cmd_vel",
                 description="Input Twist topic",
@@ -118,8 +125,8 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "sdk_json_template",
-                default_value='{"accid":"nav_bridge","title":"request_twist","timestamp":{timestamp_ms},"guid":"{guid}","data":{"linear_x":{linear_x},"linear_y":{linear_y},"angular_z":{angular_z}}}',
-                description="JSON template for SDK publishJsonMessage payload",
+                default_value='{"accid":"{accid}","title":"request_twist","timestamp":{timestamp_ms},"guid":"{guid}","data":{"x":{linear_x},"y":{linear_y},"z":{angular_z}}}',
+                description="JSON template for SDK publishJsonMessage payload. Use {accid}, {timestamp_ms}, {guid}, {linear_x}, {linear_y}, {angular_z} as placeholders.",
             ),
             OpaqueFunction(function=_create_node),
         ]

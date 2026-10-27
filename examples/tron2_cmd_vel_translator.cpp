@@ -9,6 +9,9 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class Tron2CmdVelTranslator : public rclcpp::Node
 {
@@ -20,13 +23,14 @@ public:
         cmd_vel_topic_in_(declare_parameter<std::string>("cmd_vel_topic_in", "/cmd_vel")),
         cmd_vel_topic_out_(declare_parameter<std::string>("cmd_vel_topic_out", "/tron2/cmd_vel")),
         robot_ip_(declare_parameter<std::string>("robot_ip", "10.192.1.2")),
+        accid_(declare_parameter<std::string>("accid", "nav_bridge")),
         max_linear_x_(declare_parameter<double>("max_linear_x", 0.6)),
         max_linear_y_(declare_parameter<double>("max_linear_y", 0.4)),
         max_angular_z_(declare_parameter<double>("max_angular_z", 1.2)),
         deadman_timeout_s_(declare_parameter<double>("deadman_timeout_s", 0.5)),
         sdk_json_template_(declare_parameter<std::string>(
             "sdk_json_template",
-            "{\"accid\":\"nav_bridge\",\"title\":\"request_twist\",\"timestamp\":{timestamp_ms},\"guid\":\"{guid}\",\"data\":{\"linear_x\":{linear_x},\"linear_y\":{linear_y},\"angular_z\":{angular_z}}}")),
+            "{\"accid\":\"{accid}\",\"title\":\"request_twist\",\"timestamp\":{timestamp_ms},\"guid\":\"{guid}\",\"data\":{\"x\":{linear_x},\"y\":{linear_y},\"z\":{angular_z}}}")),
         last_cmd_time_(this->now()),
         sent_timeout_stop_(true),
         sequence_id_(0)
@@ -47,6 +51,42 @@ public:
                 enable_sdk_output_ = false;
             } else {
                 RCLCPP_INFO(get_logger(), "TRON2 SDK connected to robot_ip=%s", robot_ip_.c_str());
+                
+                // Subscribe to robot JSON notifications to auto-update accid
+                robot_->subscribeJsonMessage([this](const std::string& json_payload) {
+                    try {
+                        const auto message = json::parse(json_payload);
+                        if (!message.is_object()) {
+                            return;
+                        }
+                        
+                        auto extractString = [](const json& obj, const std::string& key) -> std::string {
+                            if (obj.is_object() && obj.contains(key) && obj[key].is_string()) {
+                                return obj[key].get<std::string>();
+                            }
+                            return {};
+                        };
+                        
+                        std::string new_accid;
+                        new_accid = extractString(message, "accid");
+                        if (new_accid.empty() && message.contains("data")) {
+                            new_accid = extractString(message["data"], "accid");
+                        }
+                        if (new_accid.empty() && message.contains("data") && message["data"].contains("robot_info")) {
+                            new_accid = extractString(message["data"]["robot_info"], "accid");
+                        }
+                        
+                        if (!new_accid.empty() && new_accid != "nav_bridge" && new_accid != "UNKNOWN" &&
+                            new_accid != accid_) {
+                            accid_ = new_accid;
+                            RCLCPP_INFO(get_logger(), "Robot accid auto-updated: %s", accid_.c_str());
+                        }
+                    } catch (const json::parse_error& e) {
+                        // Silently ignore malformed JSON
+                    } catch (const std::exception& e) {
+                        RCLCPP_DEBUG(get_logger(), "Error parsing accid from JSON: %s", e.what());
+                    }
+                });
             }
         }
 
@@ -126,6 +166,7 @@ private:
     std::string buildJson(const geometry_msgs::msg::Twist &cmd)
     {
         std::string payload = sdk_json_template_;
+        replaceAll(payload, "{accid}", accid_);  // Use auto-updated accid
         replaceAll(payload, "{linear_x}", toFixed6(cmd.linear.x));
         replaceAll(payload, "{linear_y}", toFixed6(cmd.linear.y));
         replaceAll(payload, "{angular_z}", toFixed6(cmd.angular.z));
@@ -199,6 +240,7 @@ private:
     std::string cmd_vel_topic_in_;
     std::string cmd_vel_topic_out_;
     std::string robot_ip_;
+    std::string accid_;  // Auto-updated from robot notifications
     double max_linear_x_;
     double max_linear_y_;
     double max_angular_z_;

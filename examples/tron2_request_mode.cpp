@@ -33,7 +33,7 @@ public:
         enable_stair_(declare_parameter<bool>("enable_stair", false)),
         offline_mode_(declare_parameter<bool>("offline_mode", false)),
         current_mode_(RobotMode::UNKNOWN),
-        accid_(declare_parameter<std::string>("accid", "tron2a-405"))
+        accid_(declare_parameter<std::string>("accid", "wf_tron2a-405"))
     {
         if (!offline_mode_) {
             // Initialize the robot

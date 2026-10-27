@@ -97,7 +97,7 @@ ros2 service call /tron2_stair_mode std_srvs/SetBool "{data: true}"
 ros2 service call /tron2_enable_imu std_srvs/Trigger
 
 # 5. Send velocity commands (robot ready)
-ros2 topic pub /cmd_vel geometry_msgs/Twist \
+ros2 topic pub -r 25 /cmd_vel geometry_msgs/Twist \
   "{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 
 # 6. Stop and sit down
@@ -108,19 +108,19 @@ ros2 service call /tron2_sit_mode std_srvs/Trigger
 
 **Forward motion:**
 ```bash
-ros2 topic pub /cmd_vel geometry_msgs/Twist \
+ros2 topic pub -r 25 /cmd_vel geometry_msgs/Twist \
   "{linear: {x: 1.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 ```
 
 **Turn right:**
 ```bash
-ros2 topic pub /cmd_vel geometry_msgs/Twist \
+ros2 topic pub -r 25 /cmd_vel geometry_msgs/Twist \
   "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -0.5}}"
 ```
 
 **Stop:**
 ```bash
-ros2 topic pub /cmd_vel geometry_msgs/Twist \
+ros2 topic pub -r 25 /cmd_vel geometry_msgs/Twist \
   "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 ```
 

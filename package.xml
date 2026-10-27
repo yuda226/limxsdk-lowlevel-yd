@@ -13,6 +13,8 @@
   <buildtool_depend    condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
   <build_depend        condition="$ROS_VERSION == 2">rclcpp</build_depend>
   <build_depend        condition="$ROS_VERSION == 2">geometry_msgs</build_depend>
+  <depend             condition="$ROS_VERSION == 2">std_msgs</depend>
+  <depend             condition="$ROS_VERSION == 2">nlohmann_json</depend>
   <build_export_depend condition="$ROS_VERSION == 2">rclcpp</build_export_depend>
   <build_export_depend condition="$ROS_VERSION == 2">geometry_msgs</build_export_depend>
   <exec_depend         condition="$ROS_VERSION == 2">rclcpp</exec_depend>
